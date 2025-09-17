@@ -72,7 +72,7 @@ class GeneradorPuzzleRuta:
         """
         mapa_ruta_solucion = self._generar_ruta_completa()
         if not mapa_ruta_solucion:
-            print("Error: No se pudo generar una ruta válida.")
+            # print("Error: No se pudo generar una ruta válida.")
             return None, None
 
         particion_longitudes = self._particionar_ruta()
