@@ -1,7 +1,6 @@
-from numari_deybby.backtrack import Backtrack
-from numari_deybby.control import Control
+from generador_tablero import GeneradorPuzzleRuta
+from control import Control
 import os
-import random
 import time
 
 class NumariBoard:
@@ -13,18 +12,12 @@ class NumariBoard:
         
         if not board:
             self.length = n
-            board = self.new_board(n)
+            board, solution = GeneradorPuzzleRuta(tamano=n).generar_puzzle()
+            board = [[' ' if celda == 0 else celda - 1 for celda in fila] for fila in board]
         
         self.board = board
         self.length = len(board)
         self.positions = self._numbers_position()
-    
-    
-    def new_board(self, length):
-        board = [['UDLRF' for _ in range(length)] for _ in range(length)]
-        board, begin = Backtrack.solve(board)
-        board = self.__generate_values(board, begin)
-        return board
     
     @staticmethod
     def _move_to(position, move):
@@ -32,42 +25,7 @@ class NumariBoard:
         movements = {'R':(x+1, y), 'L':(x-1, y), 'D': (x, y+1), 'U':(x, y-1)}
         return movements[move]    
     
-    def __generate_values(self, board, begin_position):
-        board = [[cell for cell in row] for row in board]
-        cells = self.length**2
-        x, y = begin_position
-        
-        # Max and Min quantity of cell with numbers
-        MAX_NUM_CELLS = 6
-        MIN_NUM_CELLS = 4
-        MAX_VALUE_IN_CELL = 4
-        MIN_VALUE_IN_CELL = 0
-        
-        numbers = [0 for i  in range(random.randint(MIN_NUM_CELLS, MAX_NUM_CELLS))]
-        avaible_cells = cells - len(numbers)
-        valid_values = [0, 1, 2, 3, 4]
-        while sum(numbers) != avaible_cells or any([j not in valid_values for j in numbers]):
-            for i in range(len(numbers)-1):
-                numbers[i] = random.randint(MIN_VALUE_IN_CELL, MAX_VALUE_IN_CELL)
-            numbers[len(numbers)-1] = avaible_cells - sum(numbers)   
-        
-        for number in numbers:
-            if board[y][x] == 'F':
-                    board[y][x] = ' '
-                    return board
-            new_x, new_y = NumariBoard._move_to((x, y), board[y][x])
-            board[y][x] = number
-            x, y = new_x, new_y
-            for _ in range(number):
-                
-                if board[y][x] == 'F':
-                    board[y][x] = ' '
-                    return board
-                
-                new_x, new_y = NumariBoard._move_to((x, y), board[y][x])
-                board[y][x] = ' '
-                x, y = new_x, new_y
-                
+
     def _numbers_position(self):
         positions = []
         
@@ -76,7 +34,6 @@ class NumariBoard:
                 
                 if isinstance(self.board[y][x], int):
                     positions.append((x, y))
-        
         return positions
     
     
@@ -276,11 +233,13 @@ class NumariBoard:
             break
         
 if __name__ == '__main__':
-    b = NumariBoard([
-                    [3, " ", " ", " ", " "],
-                    [" ", " ", " ", 3, " "],
-                    [" ", " ", 3, " ", " "],
-                    [" ", 3, " ", " ", " "],
-                    [3, " ", " ", " ", 4]])
-    b.play()
+    # b = NumariBoard([
+    #                 [3, " ", " ", " ", " "],
+    #                 [" ", " ", " ", 3, " "],
+    #                 [" ", " ", 3, " ", " "],
+    #                 [" ", 3, " ", " ", " "],
+    #                 [3, " ", " ", " ", 4]])
+    # b.play()
+    new_puzzle = NumariBoard(n=5)
+    new_puzzle.play()
                     
