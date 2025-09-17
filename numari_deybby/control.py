@@ -5,14 +5,14 @@ class Control:
     
     @staticmethod
     def select(selections:dict):
-        buttons = selections.keys()
+        buttons = [k.upper() for k in selections.keys()] # When we push a key the program read it as a upper key
         
         while True:
-            key = keyboard.read_key().upper()
+            key = keyboard.read_key(suppress=True).upper()
             time.sleep(0.2)
             
             if key not in buttons: continue
-            
+
             return selections[key]
         
 
