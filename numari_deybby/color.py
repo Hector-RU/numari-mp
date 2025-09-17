@@ -7,3 +7,4 @@ class Color:
     ORANGE = '\033[38;5;208m'
 
 VACIO_SIMBOLO = '□'; CHECK_SIMBOLO = '✓'; X_SIMBOLO = 'x'
+property
