@@ -1,5 +1,6 @@
 from generador_tablero import GeneradorPuzzleRuta
 from control import Control
+from color import Color
 import os
 import time
 
@@ -12,7 +13,9 @@ class NumariBoard:
         
         if not board:
             self.length = n
-            board, solution = GeneradorPuzzleRuta(tamano=n).generar_puzzle()
+            solution = None
+            while not board or not solution: # Make sure there is a board
+                board, solution = GeneradorPuzzleRuta(tamano=n).generar_puzzle() 
             board = [[' ' if celda == 0 else celda - 1 for celda in fila] for fila in board]
         
         self.board = board
@@ -61,25 +64,18 @@ class NumariBoard:
                 
                 # Naranja para celdas incompletas 
                 if (x, y) in orange_cells:
-                    print(f'| \033[38;5;208m{board[y][x]}\033[0m ', end='')  
+                    print(f'| {Color.ORANGE}{board[y][x]}{Color.RESET} ', end='')  
                 
                 # Verde para celdas ya completadas      
                 elif (x, y) in movements: 
-                    print(f'| \033[32m{board[y][x]}\033[0m ', end='') 
+                    print(f'| {Color.GREEN}{board[y][x]}{Color.RESET} ', end='') 
                     
                 # Rojo para celda a la que no se puede mover
                 elif (x, y) == problem:
-                    # # SI la celda esta vacia pinta el cuadro rojo vacio
-                    # if board[y][x] == ' ':
-                    #     print("\033[41m   \033[0m")
-                    # # Si no esta vacia pinta el cuadro rojo con el numero
-                    # else:
-                    #     print(F"| \033[41m{print("\033[41m   \033[0m")}\033[0m |")  
-                    
-                    print(f'|\033[41m {board[y][x]} \033[0m', end='')
+                    print(f'|{Color.BACKGROUND_RED} {board[y][x]} {Color.RESET}', end='')
                     
                 elif isinstance(board[y][x], int):
-                    print(f'| \033[34m{board[y][x]}\033[0m ', end='')
+                    print(f'| {Color.BLUE}{board[y][x]}{Color.RESET} ', end='')
                 else:
                     print(f'| {board[y][x]} ', end='')
             print('|')
@@ -97,9 +93,8 @@ class NumariBoard:
                 
                 
                 if actual_position and actual_position==(x,y):
-                    
-                    # \033[31mTexto rojo\033[0m
-                    print(f'| \033[34m{board[y][x]}\033[0m ', end='')
+
+                    print(f'| {Color.BLUE}{board[y][x]}{Color.RESET} ', end='')
                 else:
                     print(f'| {board[y][x]} ', end='')
 
@@ -148,8 +143,8 @@ class NumariBoard:
             numbers_positions = []
             i_position = 0
             collected_cells[y][x] = True
-            
-            while len(numbers_positions) <= self.length**2:
+            move = None
+            while move != "C":
                 
                 while i_position <= board[y_number][x_number]:
                     os.system('cls')
@@ -164,22 +159,10 @@ class NumariBoard:
                         
                     if isinstance(move, str):
                         if move == 'ESC':
+                            os.system('cls')
+                            return 
+                        else: # C (Clear)
                             break
-                        else: # C
-                            board =  [[cell for cell in row] for row in self.board]
-                            begin_position = self.__select_begin_cell()
-                            if begin_position:
-                                x, y = begin_position
-                            else: # Salir
-                                break
-                            movements = []
-                            numbers_positions = []
-                            i_position = 0
-                            x, y = begin_position
-                            collected_cells = [[False for _ in range(self.length)] for _ in range(self.length)]
-                            collected_cells[y][x] = True
-                            
-                            continue
                         
                         
                     new_x, new_y = x + move[0], y + move[1]
@@ -221,16 +204,18 @@ class NumariBoard:
                     i_position += 1
 
                     if any(all(all(row) for row in collected_cells) for row in collected_cells):
-                        print("Ganaste")
+                        os.system('cls')
                         self.show_game(board, (temporal_numbers_positions, temporal_movements))
+                        print(f"{Color.BOLD}{Color.GREEN}Ganaste{Color.RESET}")
                         return
 
-                    
+                if move == 'C':
+                    break
+                  
                 numbers_positions.append((x_number, y_number))
                 
                 x_number, y_number = x, y
                 i_position = 0
-            break
         
 if __name__ == '__main__':
     # b = NumariBoard([
