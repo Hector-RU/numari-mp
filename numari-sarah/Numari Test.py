@@ -1,0 +1,349 @@
+import random
+import os # <--- STEP 1: ADD THIS IMPORT
+
+# ==============================================================================
+# ## Class 1: MapGenerator (NO CHANGE)
+# ==============================================================================
+class MapGenerator:
+    """
+    Generates a valid and solvable 4x4 Numari puzzle.
+    """
+    def __init__(self, rows=4, cols=4):
+        self.rows = rows
+        self.cols = cols
+        self.total_cells = rows * cols
+
+    def generate_map(self):
+        """
+        The main public method to generate a new map.
+        
+        Returns:
+            tuple: A tuple containing the (puzzle_grid, solution_grid).
+        """
+        while True:
+            path = self._find_hamiltonian_path()
+            if not path:
+                continue 
+
+            solution_grid = self._convert_path_to_solution_grid(path)
+            puzzle_grid = self._convert_path_to_puzzle_grid(path)
+
+            if self._is_puzzle_valid(puzzle_grid):
+                return puzzle_grid, solution_grid
+    
+    def _find_hamiltonian_path(self):
+        """
+        Finds a random Hamiltonian path using a recursive backtracking algorithm.
+        """
+        path = []
+        visited = set()
+        start_row, start_col = random.randint(0, self.rows - 1), random.randint(0, self.cols - 1)
+        start_node = (start_row, start_col)
+
+        def backtrack(node):
+            path.append(node)
+            visited.add(node)
+
+            if len(path) == self.total_cells:
+                return True
+
+            r, c = node
+            neighbors = [(r-1, c), (r+1, c), (r, c-1), (r, c+1)]
+            random.shuffle(neighbors)
+
+            for neighbor_r, neighbor_c in neighbors:
+                if 0 <= neighbor_r < self.rows and 0 <= neighbor_c < self.cols:
+                    if (neighbor_r, neighbor_c) not in visited:
+                        if backtrack((neighbor_r, neighbor_c)):
+                            return True
+            
+            path.pop()
+            visited.remove(node)
+            return False
+
+        if backtrack(start_node):
+            return path
+        return None
+
+    def _convert_path_to_solution_grid(self, path):
+        """Converts the list of coordinates (path) into a direction-based grid."""
+        grid = [['' for _ in range(self.cols)] for _ in range(self.rows)]
+        for i in range(len(path) - 1):
+            r1, c1 = path[i]
+            r2, c2 = path[i+1]
+            
+            if r2 > r1: grid[r1][c1] = 'D'
+            elif r2 < r1: grid[r1][c1] = 'U'
+            elif c2 > c1: grid[r1][c1] = 'R'
+            elif c2 < c1: grid[r1][c1] = 'L'
+
+        final_r, final_c = path[-1]
+        grid[final_r][final_c] = 'F'
+        return grid
+
+    def _convert_path_to_puzzle_grid(self, path):
+        """Converts the path into a playable puzzle with numbers and empty cells."""
+        k = random.randint(4, 6)
+        target_sum = self.total_cells - k
+        partition = self._get_constrained_partition(k, target_sum, max_val=4)
+        
+        puzzle_grid = [['C' for _ in range(self.cols)] for _ in range(self.rows)]
+        
+        path_cursor = 0
+        for num in partition:
+            if path_cursor < len(path):
+                r, c = path[path_cursor]
+                puzzle_grid[r][c] = num
+                path_cursor += (num + 1)
+        
+        return puzzle_grid
+
+    def _get_constrained_partition(self, k, target_sum, max_val):
+        """Helper to find k integers that sum to target_sum, each <= max_val."""
+        while True:
+            nums = [0] * k
+            current_sum = 0
+            
+            for _ in range(target_sum):
+                valid_indices = [i for i, val in enumerate(nums) if val < max_val]
+                if not valid_indices:
+                    break
+                
+                chosen_index = random.choice(valid_indices)
+                nums[chosen_index] += 1
+                current_sum += 1
+
+            if current_sum == target_sum:
+                random.shuffle(nums)
+                return nums
+                
+    def _is_puzzle_valid(self, puzzle_grid):
+        """Checks if the puzzle meets constraints (e.g., no adjacent numbers)."""
+        for r in range(self.rows):
+            for c in range(self.cols):
+                if isinstance(puzzle_grid[r][c], int) and puzzle_grid[r][c] > 0:
+                    for dr, dc in [(-1,0), (1,0), (0,-1), (0,1)]:
+                        nr, nc = r + dr, c + dc
+                        if 0 <= nr < self.rows and 0 <= nc < self.cols:
+                            neighbor_val = puzzle_grid[nr][nc]
+                            if isinstance(neighbor_val, int) and neighbor_val > 0:
+                                return False
+        return True
+
+# ==============================================================================
+# ## Class 2: Board (NO CHANGE)
+# ==============================================================================
+class Board:
+    """
+    Represents the game board, holding the puzzle state and handling display.
+    """
+    def __init__(self, puzzle_grid, solution_grid=None):
+        if not puzzle_grid:
+            raise ValueError("A puzzle grid must be provided.")
+            
+        self.puzzle_grid = puzzle_grid
+        self.solution_grid = solution_grid
+        self.rows = len(puzzle_grid)
+        self.cols = len(puzzle_grid[0]) if self.rows > 0 else 0
+        self.total_cells = self.rows * self.cols
+
+    def display(self, player_path=None):
+        """Displays the puzzle grid, highlighting the player's current path."""
+        if player_path is None:
+            player_path = []
+            
+        print("\n   " + "   ".join(map(str, range(self.cols))))
+        print("  " + "----" * self.cols)
+
+        for r in range(self.rows):
+            row_str = f"{r}| "
+            for c in range(self.cols):
+                cell_value = self.puzzle_grid[r][c]
+                
+                if (r, c) in player_path:
+                    if isinstance(cell_value, int):
+                         row_str += f"[{cell_value}] "
+                    else:
+                         row_str += "[X] "
+                else:
+                    row_str += f" {cell_value}  "
+            print(row_str)
+        print()
+
+    @classmethod
+    def load_from_file(cls, filepath):
+        """Creates a Board instance by loading a puzzle from a text file."""
+        try:
+            with open(filepath, 'r') as f:
+                puzzle_grid = []
+                for line in f:
+                    stripped_line = line.strip()
+                    if not stripped_line: continue
+                    
+                    row_items = stripped_line.split()
+                    processed_row = [int(item) if item.isdigit() else 'C' for item in row_items]
+                    puzzle_grid.append(processed_row)
+
+                if len(puzzle_grid) != 4 or any(len(row) != 4 for row in puzzle_grid):
+                    print("Error: The file must contain a valid 4x4 grid.")
+                    return None
+                
+                print(f"Board loaded successfully from '{filepath}'.")
+                return cls(puzzle_grid=puzzle_grid)
+        except FileNotFoundError:
+            print(f"Error: The file '{filepath}' was not found.")
+            return None
+
+# ==============================================================================
+# ## Class 3: Game (MODIFIED)
+# ==============================================================================
+class Game:
+    """
+    Manages the main game loop, player input, and game logic.
+    """
+    def __init__(self):
+        self.board = None
+        self.game_over = False
+        self.player_path = []
+        self.move_count = 0
+        self.current_group_target_size = 0
+        self.current_group_progress = 0
+
+    def start_new_game(self):
+        """Initializes and starts a new game session."""
+        print("Generating a new Numari puzzle...")
+        generator = MapGenerator()
+        puzzle, solution = generator.generate_map()
+        self.board = Board(puzzle_grid=puzzle, solution_grid=solution)
+        self.reset_game_state()
+        self.run_game_loop()
+
+    def reset_game_state(self):
+        """Resets the current game state to its initial values."""
+        self.game_over = False
+        self.player_path = []
+        self.move_count = 0
+        self.current_group_target_size = 0
+        self.current_group_progress = 0
+        print("Game has been reset. Good luck!")
+
+    def run_game_loop(self):
+        """The main loop that runs until the game is over."""
+        while not self.game_over:
+            # --- STEP 2: ADD THE CLEAR SCREEN COMMAND ---
+            # For Windows the command is 'cls', for Mac/Linux it is 'clear'
+            os.system('cls' if os.name == 'nt' else 'clear')
+
+            self.board.display(self.player_path)
+            self.display_status()
+            self.process_player_input()
+        
+        print("Thank you for playing!")
+
+    def display_status(self):
+        """Prints the current status of the game to the console."""
+        print(f"Moves: {self.move_count}")
+        if self.current_group_target_size > 0:
+            print(f"Current Group: {self.current_group_progress} / {self.current_group_target_size}")
+        else:
+            print("Select a numbered cell to start a group.")
+
+    def process_player_input(self):
+        """Gets and processes input from the player."""
+        prompt = "Enter 'row col' to move | 'reset' | 'quit': "
+        user_input = input(prompt).lower().strip()
+
+        if user_input == 'quit':
+            self.game_over = True
+            return
+        
+        if user_input == 'reset':
+            # When resetting, we don't need to call the whole loop again,
+            # just reset the state and the main loop will continue.
+            self.start_new_game() # Start a completely new puzzle
+            self.game_over = True # End the old game instance
+            return
+
+        try:
+            parts = user_input.split()
+            if len(parts) != 2:
+                raise ValueError("Please enter exactly two numbers.")
+            
+            row, col = int(parts[0]), int(parts[1])
+            if not (0 <= row < self.board.rows and 0 <= col < self.board.cols):
+                print("\n*** Error: Coordinates are outside the board. Try again. ***")
+                input("Press Enter to continue...") # Pause to read the error
+                return
+
+            self.make_move(row, col)
+        except (ValueError, IndexError):
+            print("\n*** Error: Invalid input. Please enter coordinates like '2 1'. ***")
+            input("Press Enter to continue...") # Pause to read the error
+
+    def make_move(self, row, col):
+        """Attempts to make a move and updates the game state if valid."""
+        is_valid, message = self.is_valid_move(row, col)
+
+        if not is_valid:
+            print(f"\n*** Invalid Move: {message} ***")
+            input("Press Enter to continue...") # Pause to read the error
+            return
+        
+        self.player_path.append((row, col))
+        self.move_count += 1
+        
+        if self.current_group_progress == self.current_group_target_size:
+            cell_value = self.board.puzzle_grid[row][col]
+            self.current_group_target_size = cell_value + 1
+            self.current_group_progress = 1
+        else:
+            self.current_group_progress += 1
+
+        if len(self.player_path) == self.board.total_cells:
+            os.system('cls' if os.name == 'nt' else 'clear')
+            print("==============================")
+            print("===      PUZZLE SOLVED!      ===")
+            print("==============================")
+            self.board.display(self.player_path)
+            print("\n*********************************************")
+            print(f"*** Congratulations! Puzzle solved in {self.move_count} moves! ***")
+            print("*********************************************")
+            self.game_over = True
+
+    def is_valid_move(self, row, col):
+        """Checks if a move to (row, col) is valid based on Numari rules."""
+        cell_value = self.board.puzzle_grid[row][col]
+        is_cell_a_number = isinstance(cell_value, int)
+
+        if (row, col) in self.player_path:
+            return False, "That cell has already been selected."
+
+        if not self.player_path:
+            return (True, "") if is_cell_a_number else (False, "The first move must be on a numbered cell.")
+
+        last_r, last_c = self.player_path[-1]
+        if abs(row - last_r) + abs(col - last_c) != 1:
+            return False, "You can only move to an adjacent (non-diagonal) cell."
+            
+        group_is_complete = self.current_group_progress == self.current_group_target_size
+        
+        if group_is_complete:
+            if not is_cell_a_number:
+                return False, "The previous group is complete. You must start a new group on a numbered cell."
+        else:
+            if is_cell_a_number:
+                return False, "You cannot select another numbered cell until the current group is complete."
+        
+        return True, ""
+
+# ==============================================================================
+# ## Main Execution Block
+# ==============================================================================
+if __name__ == "__main__":
+    os.system('cls' if os.name == 'nt' else 'clear')
+    print("==============================")
+    print("=== WELCOME TO NUMARI CONSOLE ===")
+    print("==============================")
+    
+    game = Game()
+    game.start_new_game()
