@@ -135,8 +135,6 @@ class ValidadorPuzzleRuta:
 
         return es_valida
 
-
-# --- Ejecución del código unificado ---
 if __name__ == "__main__":
     validador = ValidadorPuzzleRuta(tamano=4)
     validador.validar("numari_deybby/tablero.txt", "numari_deybby/solucion.txt")
