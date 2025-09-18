@@ -14,8 +14,7 @@ class ValidadorPuzzleRuta:
 
     def _cargar_grid_desde_txt(self, filepath):
         if not os.path.exists(filepath):
-            print(f"Error: El archivo no se contró")
-            return None
+            return ("Error: El archivo no se contró")
         
         grid = []
         with open(filepath, 'r') as f:
@@ -24,8 +23,9 @@ class ValidadorPuzzleRuta:
                     fila = [int(val) if val.strip().upper() != 'X' else 0 for val in linea.split()]
                     grid.append(fila)
                 except ValueError:
-                    print(f"Error: El archivo '{filepath}' contiene valores no numéricos")
-                    return None
+                    return (f"Error: El archivo '{filepath}' contiene valores no numéricos")
+                
+
         return grid
 
     def _validar_integridad_ruta(self):
@@ -35,8 +35,7 @@ class ValidadorPuzzleRuta:
         # 1. Verificar que contiene todos los números de 1 a 16
         numeros_planos = [num for fila in self.solucion_grid for num in fila]
         if sorted(numeros_planos) != list(range(1, self.total_casillas + 1)):
-            print("Error de validación: La solución no contiene todos los números del 1 al 16")
-            return False
+            return ("Error de validación: La solución no contiene todos los números del 1 al 16")
 
         # 2. Crear un mapa de número -> coordenadas para fácil acceso
         for fila_idx, fila in enumerate(self.solucion_grid):
@@ -49,8 +48,7 @@ class ValidadorPuzzleRuta:
             y1, x1 = self.mapa_pasos[i]
             y2, x2 = self.mapa_pasos[i+1]
             if abs(y1 - y2) + abs(x1 - x2) != 1:
-                print(f"Error de validación: La ruta no es continua entre el paso {i} y el {i+1}")
-                return False
+                return (f"Error de validación: La ruta no es continua entre el paso {i} y el {i+1}")
         
         return True
 
@@ -71,8 +69,8 @@ class ValidadorPuzzleRuta:
 
                     # Asegurarse de que el segmento no se salga del tablero
                     if paso_inicio + longitud_segmento -1 > self.total_casillas:
-                        print(f"Error de validación: La restricción de longitud {longitud_segmento} en ({fila_idx}, {col_idx}) hace que la ruta se salga del tablero")
-                        return False
+                        return (f"Error de validación: La restricción de longitud {longitud_segmento} en ({fila_idx}, {col_idx}) hace que la ruta se salga del tablero")
+                        
 
                     # Dirección del segmento (dx, dy)
                     y_actual, x_actual = self.mapa_pasos[paso_inicio]
@@ -88,8 +86,7 @@ class ValidadorPuzzleRuta:
                         y_real, x_real = self.mapa_pasos[paso_verificar]
 
                         if (y_real, x_real) != (y_esperado, x_esperado):
-                            print(f"Error de validación: El segmento que inicia en el paso {paso_inicio} en ({fila_idx}, {col_idx}) debía ser recto por {longitud_segmento} casillas, pero se desvía.")
-                            return False
+                            return (f"Error de validación: El segmento que inicia en el paso {paso_inicio} en ({fila_idx}, {col_idx}) debía ser recto por {longitud_segmento} casillas, pero se desvía.")
         return True
 
 
@@ -111,8 +108,8 @@ class ValidadorPuzzleRuta:
         if not self._validar_restricciones_puzzle():
             return False
 
-        print("La solución es válida para el puzzle proporcionado")
-        return True
+        # print("La solución es válida para el puzzle proporcionado")
+        return self.puzzle_grid
 
     def _convertir_a_formato_backtrack(self):
         """Convierte el tablero Numari al formato que acepta Backtrack"""
@@ -145,7 +142,7 @@ class ValidadorPuzzleRuta:
 if __name__ == "__main__":
     validador_dos = ValidadorPuzzleRuta(tamano=4)
     # validador_dos.validar("puzzle.txt", "solucion_invalida.txt")
-    validador_dos.validar("numari_deybby/tablero.txt", "numari_deybby/solucion.txt")
+    validador_dos.validar("numari-mp/numari_deybby/tablero.txt", "numari-mp/numari_deybby/solucion.txt")
     
     validador = ValidadorPuzzleRuta(tamano=4)
     if validador.tiene_solucion("numari_deybby/tablero.txt"):
