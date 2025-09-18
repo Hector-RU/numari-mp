@@ -1,4 +1,5 @@
 import os
+from backtrack import Backtrack
 
 class ValidadorPuzzleRuta:
     """
@@ -113,8 +114,41 @@ class ValidadorPuzzleRuta:
         print("La solución es válida para el puzzle proporcionado")
         return True
 
+    def _convertir_a_formato_backtrack(self):
+        """Convierte el tablero Numari al formato que acepta Backtrack"""
+        board = [['UDLRF' for _ in range(self.tamano)] for _ in range(self.tamano)]
+        
+        # Marcar la última casilla como Final
+        board[self.tamano-1][self.tamano-1] = 'F'
+        return board
+
+    def tiene_solucion(self, puzzle_filepath):
+        """
+        Verifica si el puzzle tiene al menos una solución válida
+        """
+        self.puzzle_grid = self._cargar_grid_desde_txt(puzzle_filepath)
+        if not self.puzzle_grid:
+            return False
+
+        # Convertir a formato backtrack
+        board_backtrack = self._convertir_a_formato_backtrack()
+        
+        # Intentar resolver con Backtrack
+        resultado = Backtrack.solve(board_backtrack)
+        
+        if resultado:
+            board_solucion, _ = resultado
+            return True
+        return False
+
 # --- Ejecución del código ---
 if __name__ == "__main__":
     validador_dos = ValidadorPuzzleRuta(tamano=4)
     # validador_dos.validar("puzzle.txt", "solucion_invalida.txt")
-    validador_dos.validar("tablero.txt", "solucion.txt")
+    validador_dos.validar("numari_deybby/tablero.txt", "numari_deybby/solucion.txt")
+    
+    validador = ValidadorPuzzleRuta(tamano=4)
+    if validador.tiene_solucion("numari_deybby/tablero.txt"):
+        print("El tablero tiene al menos una solución válida")
+    else:
+        print("El tablero no tiene solución válida")
