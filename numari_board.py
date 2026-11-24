@@ -8,13 +8,16 @@ class NumariBoard:
     
     def __init__(self, board:list=None, n:int=4):
         """
-        board: List of lists of the board, None for generate a random board
-        n: lenght of board n*n"""
+        Crea un tablero de juego.
+
+        board: lista de listas con el tablero; si es None, se genera uno aleatorio.
+        n: tamaño del tablero (n x n).
+        """
         
         if not board:
             self.length = n
             solution = None
-            while not board or not solution: # Make sure there is a board
+            while not board or not solution: # Asegura que se genere un tablero
                 board, solution = GeneradorPuzzleRuta(tamano=n).generar_puzzle() 
             board = [[' ' if celda == 0 else celda - 1 for celda in fila] for fila in board]
         

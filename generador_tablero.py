@@ -2,8 +2,8 @@ import random
 
 class GeneradorPuzzleRuta:
     """
-    Genera un puzzle 4x4 con una ruta única y números que definen
-    la longitud de los segmentos del camino.
+    Genera un puzzle de tamaño × tamaño con una ruta de solución y
+    números que definen la longitud de los segmentos del camino.
     """
     def __init__(self, tamano=4):
         self.tamano = tamano
@@ -14,6 +14,9 @@ class GeneradorPuzzleRuta:
         """
         Usa backtracking para encontrar un camino Hamiltoniano aleatorio
         en la cuadrícula (una ruta que visita cada casilla exactamente una vez).
+
+        Devuelve un diccionario {número_de_paso: (x, y)} o None si no se
+        encontró ningún camino desde la casilla inicial elegida.
         """
         mapa_ruta = {}
         visitadas = set()
@@ -42,10 +45,12 @@ class GeneradorPuzzleRuta:
         else:
             return None
 
-    # --- MÉTODO MODIFICADO ---
     def _particionar_ruta(self):
         """
-        Genera una lista de números aleatorios entre 1 y 4 cuya suma es 16.
+        Genera una lista de longitudes aleatorias entre 1 y 5 cuya suma es
+        el total de casillas del tablero (tamaño × tamaño).
+
+        Cada longitud L se muestra en el tablero como el número L - 1.
         """
         particion = []
         suma_actual = 0
@@ -53,7 +58,7 @@ class GeneradorPuzzleRuta:
             restante = self.total_casillas - suma_actual
             max_valor = min(5, restante)
             
-            # Asegura que el mínimo sea 1 a menos que el máximo sea 0
+            # Garantiza que cada longitud sea al menos 1
             if max_valor <= 0: break
             min_valor = 1
             
@@ -64,11 +69,13 @@ class GeneradorPuzzleRuta:
         
         random.shuffle(particion)
         return particion
-    # --- FIN DEL MÉTODO MODIFICADO ---
 
     def generar_puzzle(self):
         """
         Orquesta la generación del puzzle y su solución.
+
+        Devuelve una tupla (puzzle_grid, solucion_grid), o (None, None) si no
+        se pudo generar un camino Hamiltoniano.
         """
         mapa_ruta_solucion = self._generar_ruta_completa()
         if not mapa_ruta_solucion:

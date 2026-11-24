@@ -5,7 +5,7 @@ class Control:
     
     @staticmethod
     def select(selections:dict):
-        buttons = [k.upper() for k in selections.keys()] # When we push a key the program read it as a upper key
+        buttons = [k.upper() for k in selections.keys()] # Al presionar una tecla, el programa la lee en mayúsculas
         
         while True:
             key = keyboard.read_key(suppress=True).upper()
